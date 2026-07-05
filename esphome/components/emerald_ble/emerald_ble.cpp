@@ -242,6 +242,15 @@ void Emerald::gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_par
 
         // uint8_t set_auto_upload[] = {0x00, 0x01, 0x02, 0x0b, 0x01, 0x01};
         ESP_LOGI(TAG, "[%s] Writing auto upload code to Emerald", this->parent_->address_str());
+        {
+          esp_ble_conn_update_params_t conn_params = {};
+          memcpy(conn_params.bda, this->parent_->get_remote_bda(), sizeof(esp_bd_addr_t));
+          conn_params.min_int = 0x0140;  // 320 * 1.25ms = 400ms
+          conn_params.max_int = 0x0180;  // 480ms
+          conn_params.latency = 4;       // peripheral may skip 4 intervals
+          conn_params.timeout = 2000;    // 2000 * 10ms = 20s supervision timeout
+          esp_ble_gap_update_conn_params(&conn_params);
+        }
         auto write_status = esp_ble_gattc_write_char(this->parent()->get_gattc_if(), this->parent()->get_conn_id(),
                                                this->time_write_size_char_handle_, sizeof(setAutoUploadStatusCmd),
                                                setAutoUploadStatusCmd, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NONE);
